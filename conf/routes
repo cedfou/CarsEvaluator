@@ -3,14 +3,32 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# An example controller showing a sample home page
-GET     /                           controllers.HomeController.index
-# An example controller showing how to use dependency injection
-GET     /count                      controllers.CountController.count
-# An example controller showing how to write asynchronous code
-GET     /message                    controllers.AsyncController.message
+# Home page
+GET     /                           controllers.FiscalCarController.index
+
+# Cars
+GET     /cars                       controllers.FiscalCarController.listCars
+POST    /cars                       controllers.FiscalCarController.createCar
+
+
+#show specific car details
+GET     /cars/:id                   controllers.FiscalCarController.showCar(id: Int)
+
+#edit a specific car details
+# This endpoint would be used by any other RESTful client
+PUT     /cars/:id                   controllers.FiscalCarController.editCar(id: Int)
+# This endpoint would be used by HTML forms
+POST   /cars/:id/edit               controllers.FiscalCarController.editCarForm(id: Int)
+
+
+#remove a specific car
+# This endpoint would be used by any other RESTful client
+DELETE     /cars/:id                controllers.FiscalCarController.deleteCar(id: Int)
+# This endpoint would be used by HTML forms
+GET   /cars/:id/delete             controllers.FiscalCarController.removeCarForm(id: Int)
+
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
 
-      
+

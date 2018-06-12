@@ -1,0 +1,117 @@
+@(cars: Seq[FiscalCar], form: Form[FiscalCarForm], postUrl: Call)(implicit request: MessagesRequestHeader)
+
+@import views.html.b4
+@import models.TypeCarburant
+
+<div class="container-fluid">
+          @main("Cars") {
+
+            <h1 class="h1">Cars</h1>
+
+            @* Flash shows updates to a page *@
+            @request.flash.data.map{ case (name, value) =>
+              <div class="alert alert-@name">@name: @value</div>
+            }
+
+              <!-- Trigger the modal with a button -->
+            <button type="button" class="btn btn-info btn-lg" data-toggle="modal" data-target="#addNewCar">Add a Car</button>
+
+          <div class="">
+            <table id="carstable" class="table table-md table-hover table-striped table-bordered ">
+              <caption>List of already encoded cars</caption>
+              <thead class="thead-dark">
+                <tr><th scope="col">Nom</th><th scope="col">prix Catal. HTVA</th><th scope="col">Remise</th><th scope="col">Type moteur</th><th scope="col">Taux CO2</th><th scope="col">Benef ISOC (&euro;)</th><th scope="col">Coût NET (&euro;)</th><th scope="col">ATN mensuel (&euro;)</th><th scope="col">Modify</th>
+              </thead>
+              <tbody>
+              @for(w <- cars) {
+                <tr scope="row" title="@w.description id=@w.id"><td>@w.name</td><td>@w.prixCatalogueHTVA</td><td>@w.remise</td><td>@w.typeCarburant</td><td>@w.tauxCO2</td><td class="alert-success">@w.getGainISOC.formatted("%.0f")</td><td class="alert-danger">@w.getCoutAnnuelNet.formatted("%.0f")</td><td class="alert-warning">@w.getATNmensuel.formatted("%.0f")</td>
+                      <td>
+                      @b4.inline.formCSRF(routes.FiscalCarController.showCar(w.id)) { implicit ifc =>
+                        @b4.submit('class -> "btn btn-secondary", 'id -> w.id) { Edit }
+                      }
+                      @b4.inline.formCSRF(routes.FiscalCarController.removeCarForm(w.id)) { implicit ifc =>
+                        @b4.button('class -> "btn btn-danger", Symbol("data-toggle") -> "modal", Symbol("data-target") -> ("#confirmModal"+w.id), 'id -> w.id) { Delete }
+
+                      <!-- Modal Confirmation box -->
+                      <div class="modal fade" id="confirmModal@w.id" tabindex="-1" role="dialog" aria-labelledby="confirmationDelete" aria-hidden="true">
+                          <div class="modal-dialog modal-sm" role="document">
+                              <div class="modal-content">
+                                  <div class="modal-header">
+                                      <h5 class="modal-title" id="confirmationDelete">Confirmation delete:</h5>
+                                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                          <span aria-hidden="true">&times;</span>
+                                      </button>
+                                  </div>
+                                  <div class="modal-body">
+                                     Are you sure to remove car: @w.name?
+                                  </div>
+                                  <div class="modal-footer">
+                                      <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                      @b4.submit('class -> "btn btn-primary", 'id -> w.id) { Confirm delete }
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                      }
+
+                      </td>
+                  </tr>
+              }
+              </tbody>
+            </table>
+          </div>
+
+            <hr/>
+
+            @* Global errors are not tied to any particular form field *@
+            @if(form.hasGlobalErrors) {
+              @form.globalErrors.map { error: FormError =>
+                <div class="alert alert-danger">
+                  @error.key: @error.message
+                </div>
+              }
+            }
+
+  </div>
+      <!-- Modal -->
+    <div id="addNewCar" class="modal fade" role="dialog">
+      <div class="modal-dialog">
+
+        <!-- Modal -->
+        <div class="modal-content">
+
+          <div class="modal-header">
+              <h2 class="h2">Add a new car :</h2>
+          </div>
+
+          <div class="modal-body">
+              @b4.horizontal.formCSRF(postUrl, "col-md-2", "col-md-8") { implicit hfc =>
+                @b4.hidden(form("id"), '_label -> "ID", 'value -> "0")
+                @b4.text(form("name"), '_label -> "Nom", 'placeholder -> "Nom")
+                @b4.textarea(form("description"), '_label -> "Description", 'placeholder -> "...")
+                @b4.text(form("prixCatalogueHTVA"), '_label -> "Prix (HTVA)", 'placeholder -> "0")
+                @b4.text(form("remise"), '_label -> "Remise", 'placeholder -> "0")
+                @b4.select(form("typeCarburant"), options = TypeCarburant.getSeq(), '_label -> "Type carburant", '_default -> "Select engine type")
+                  @b4.text(form("tauxCO2"), '_label -> "Taux de CO2", 'placeholder -> "0")
+
+                @b4.submit('class -> "btn btn-primary", 'id -> "button_id"){ Create Car }
+              }
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+<br><br>
+<div class="container-fluid">
+<h2>Tableau récapitulatif:</h2>
+    <div>
+        <div>
+            <canvas id="myChart"></canvas>
+        </div>
+    </div>
+
+</div>
+<br><br>
+
+}

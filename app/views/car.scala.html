@@ -1,0 +1,171 @@
+@(car: FiscalCar, form: Form[FiscalCarForm], putUrl: Call)(implicit request: MessagesRequestHeader)
+
+@import views.html.b4
+@import models.TypeCarburant
+@import java.util.Locale
+
+  @main("Car edit") {
+
+    <div class="container-fluid">
+      <a href="@routes.FiscalCarController.listCars()" >Back to list</a>
+
+      <h2 class="h2">Edit an existing car :</h2>
+
+        @* Flash shows updates to a page *@
+        @request.flash.data.map{ case (name, value) =>
+          <div class="alert alert-success">@name: @value</div>
+        }
+
+
+        @* Global errors are not tied to any particular form field *@
+        @if(form.hasGlobalErrors) {
+          @form.globalErrors.map { error: FormError =>
+            <div class="alert alert-danger">
+              @error.key: @error.message
+            </div>
+          }
+        }
+
+
+
+        @b4.horizontal.formCSRF(routes.FiscalCarController.editCarForm(car.id), "col-md-2", "col-md-8") { implicit hfc =>
+          @b4.text(form("id"), '_label -> "ID", 'value -> car.id)
+          @b4.text(form("name"), '_label -> "Nom", 'value -> car.name)
+          @b4.textarea(form("description"), '_label -> "Description", 'value -> car.description)
+          @b4.text(form("prixCatalogueHTVA"), '_label -> "Prix (HTVA)", 'value -> car.prixCatalogueHTVA)
+          @b4.text(form("remise"), '_label -> "Remise", 'value -> car.remise)
+          @b4.select(form("typeCarburant"), options = TypeCarburant.getSeq(), '_label -> "Type carburant", 'value -> car.typeCarburant, 'selected -> car.typeCarburant)
+          @b4.text(form("tauxCO2"), '_label -> "Taux de CO2", 'value -> car.tauxCO2)
+
+          @b4.submit('class -> "btn btn-default", 'id -> "button_id"){ Submit changes }
+        }
+
+    </div>
+
+
+  <div class="container-fluid col-sm-10 col-md-8 col-lg-6 col-xl-4">
+    <h2>Détails du calcul:</h2>
+
+    <table class="table table-bordered table-striped table-condensed ">
+      <thead>
+        <tr class="thead-dark" ><th colspan="2">Nom voiture: </th> <th>@car.name</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td colspan="2">Montant (prix Catalogue) HTVA </td>  <td>@car.prixCatalogueHTVA.toDouble.formatted("%,.2f")&euro;</td>
+        </tr>
+        <tr>
+          <td colspan="2">Remise accordée </td>   <td>-@car.remise.toDouble.formatted("%,.2f")&euro;</td>
+        </tr>
+
+        <!-- Prix achat réél: -->
+        <tr>
+          <td rowspan="3">Prix achat réel</td><td>HTVA</td><td>@car.getPrix_achatreel_HTVA.toDouble.formatted("%,.2f")&euro;</td>
+        </tr>
+        <tr>
+          <td>TVA</td> <td>@car.getPrix_achatreel_TVA.formatted("%,.2f")&euro;</td>
+        </tr>
+        <tr ">
+          <td>TVAC</td><td>@car.getPrix_achatreel_TVAC.formatted("%,.2f")&euro;</td>
+        </tr>
+
+          <!-- TVA: -->
+        <tr>
+          <td rowspan="3">TVA </td> <td>taux </td> <td>@car.TVApourcentage&#37;</td>
+        </tr>
+        <tr>
+          <td>&#37; déductibilité </td> <td class="table-info">@(car.TVApourcentageDéductionTrajet * 100)&#37;</td>
+        </tr>
+        <tr class="table-info">
+          <td >TVA déductible </td><td>@car.deductibiliteTVA.formatted("%,.2f")&euro;</td>
+        </tr>
+
+          <!-- Amortissement: -->
+        <tr>
+          <td rowspan="2">Amortissement</td> <td>Base calcul</td> <td>@car.getBaseAmortissement.formatted("%,.2f")&euro;</td>
+        </tr>
+        <tr class="table-warning">
+          <td>Amortissement annuel</td>  <td>@car.getAmortissementAnnuel.formatted("%,.2f")&euro;</td>
+        </tr>
+
+          <!-- ATN: -->
+        <tr >
+          <td rowspan="2" >ATN voiture </td> <td class="table-warning"> ATN annuel</td> <td class="table-warning">@car.getATN.formatted("%,.2f")&euro;</td>
+        </tr>
+        <tr >
+           <td> ATN mensuel</td> <td class="table-info">@car.getATNmensuel.formatted("%.2f")&euro;</td>
+        </tr>
+
+          <!-- Frais: -->
+        <tr >
+          <td rowspan="4">Frais:</td><td> Carburant</td><td>@car.getFrais._1&euro;</td>
+        </tr>
+        <tr >
+          <td>Taxe circulation</td><td>@car.getFrais._2&euro;</td>
+        </tr>
+        <tr >
+          <td>Entretien annuel</td><td>@car.getFrais._3&euro;</td>
+        </tr>
+        <tr class="table-warning">
+          <td>TOTAL (annuel)</td><td>@car.getFraisTotal&euro;</td>
+        </tr>
+
+
+        <tr class="table-primary">
+          <td title="Amortissement, total frais, ATN (annuels)" colspan="2">TOTAL Frais </td>
+          <td>@(car.getFraisTotalDeductibles.formatted("%,.2f"))&euro;</td>
+        </tr>
+
+        <tr>
+          <td rowspan="5">DNA (Dépenses non admises):</td> <td>Taux déductibilité</td> <td>@car.getDeductibilitePercent &#37;</td>
+        </tr>
+        <tr class="table-info">
+          <td title="taux Dépenses Non Admises">&#37; rejetées</td><td>@car.depencesNonAdmisesPercent &#37;</td>
+        </tr>
+        <tr class="table-warning">
+          <td>Total Frais rejetées</td><td>@car.depencesNonAdmisesFrais.formatted("%.2f")&euro;</td>
+        </tr>
+        <tr class="table-warning">
+          <td>Amortissement rejeté</td><td>@car.depencesNonAdmisesAmortissemeent.formatted("%.2f")&euro;</td>
+        </tr>
+
+        <tr class="table-warning">
+          <td>ATN rejeté (@(car.tauxNonAdmissATN)&#37;)</td><td>@car.depencesNonAdmisesATN.formatted("%.2f")&euro;</td>
+        </tr>
+
+        <tr class="table-primary">
+          <td colspan="2">TOTAL DNA rejeté </td><td>@car.getDNATotal.formatted("%.2f")&euro;</td>
+        </tr>
+
+
+        <tr>
+          <td rowspan="3" title="Bénéfice comptable annuel attendu (hardcodé pour l'instant)">Bénéfice comptable</td> <td>attendu</td> <td>@car.benefComptableAnnuelAttendu.formatted("%,.0f")&euro;</td>
+        </tr>
+        <tr>
+          <td>calculé brut(sans DNA)</td>  <td>@car.getBeneficeComptableCalcule.formatted("%,.0f")&euro;</td>
+        </tr>
+        <tr class="table-info">
+          <td title="Bénéf calculé + DNA">Bénéfice Fiscal </td><td>@car.getBeneficeFiscal.formatted("%,.0f")&euro;</td>
+        </tr>
+
+        <tr>
+          <td rowspan="3" title="">ISOC</td> <td>attendu (sur bénef initial)</td> <td>@car.getIsocAttendu.formatted("%,.0f")&euro;</td>
+        </tr>
+        <tr>
+          <td>calculé sur Bénef fiscal</td>  <td>@(car.getIsocCalculeBenefFiscal.formatted("%,.0f"))&euro;</td>
+        </tr>
+        <tr class="table-primary">
+          <td title="Bénéf calculé + DNA">Gain ISOC </td><td>@car.getGainISOC.formatted("%,.0f")&euro;</td>
+        </tr>
+
+
+        <tr class="table-success">
+          <td colspan="2">Coût annuel NET </td><td>@car.getCoutAnnuelNet.formatted("%,.0f")&euro;</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+
+
+  }
